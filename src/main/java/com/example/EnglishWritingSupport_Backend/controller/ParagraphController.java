@@ -7,10 +7,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.EnglishWritingSupport_Backend.dto.TranslationCheckRequest;
+import com.example.EnglishWritingSupport_Backend.dto.TranslationCheckResponse;
 import com.example.EnglishWritingSupport_Backend.entity.Paragraph;
+import com.example.EnglishWritingSupport_Backend.service.AITranslationService;
 import com.example.EnglishWritingSupport_Backend.service.ParagraphService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 public class ParagraphController {
   @Autowired
   private ParagraphService paragraphService;
+
+  @Autowired
+  private AITranslationService aiTranslationService;
 
   @GetMapping
   public ResponseEntity<?> getAllParagraphs() {
@@ -50,6 +58,33 @@ public class ParagraphController {
 
       return new ResponseEntity<>(
           "[CONTROLLER][GET][PARAGRAPH] /api/paragraphs/{} - Error occurred: {}" + e.getMessage(),
+          HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @PostMapping(value = "/check-translation", consumes = "application/json", produces = "application/json")
+  public ResponseEntity<?> checkTranslation(@RequestBody TranslationCheckRequest request) {
+    try {
+      if (request.getSegment() == null || request.getTranslation() == null) {
+        return new ResponseEntity<>("Segment and translation are required",
+            HttpStatus.BAD_REQUEST);
+      }
+
+      TranslationCheckResponse response = aiTranslationService.checkTranslation(
+          request.getSegment(),
+          request.getTranslation(),
+          request.getContext());
+
+      log.info("[CONTROLLER][POST][CHECK_TRANSLATION] Checked translation for paragraph: {}",
+          request.getParagraphId());
+
+      return new ResponseEntity<>(response, HttpStatus.OK);
+    } catch (Exception e) {
+      log.error("[CONTROLLER][POST][CHECK_TRANSLATION] Error occurred: {}",
+          e.getMessage(), e);
+
+      return new ResponseEntity<>(
+          "Error checking translation: " + e.getMessage(),
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

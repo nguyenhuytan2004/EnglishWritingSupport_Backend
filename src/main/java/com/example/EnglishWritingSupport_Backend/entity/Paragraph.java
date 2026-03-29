@@ -2,6 +2,7 @@ package com.example.EnglishWritingSupport_Backend.entity;
 
 import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
@@ -19,9 +20,13 @@ public class Paragraph {
   @Id
   private Integer id;
   private String title;
+
+  @Column(columnDefinition = "TEXT")
   private String paragraph;
+
   @OneToMany(mappedBy = "paragraphId")
   private List<Vocabulary> vocabularies;
+
   @OneToMany(mappedBy = "paragraphId")
   private List<Segment> segments;
 }
